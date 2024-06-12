@@ -3,7 +3,7 @@ title: AMD pdfwkrnl.sys - Elevation of Privilege
 author: Harkenzo
 subtitle: The first pop
 date: 2024-06-11 18:00:00 +0100
-categories: [Research]
+categories: [Research, Exploits]
 tags: [Kernel, Exploit Development, WinDbg]
 cover-img: /assets/img/so-many-bsods.png
 ---
@@ -217,7 +217,9 @@ After reading through numerous articles ranging in topic from: incorporating mor
 After far too many BSODs I finally found something of interest, IOCTL code `0x80002010` would invoke the method, verbosely named, `MmAllocateContiguousMemorySpecifyCache()` which according to Microsoft:
 
 ```
-Allocates a range of contiguous, nonpaged physical memory and maps it to the system address space. The routine maps this block to a contiguous block of virtual memory in the system address space and returns the virtual address of the base of this block.
+Allocates a range of contiguous, nonpaged physical memory and maps it to the system address space. 
+
+The routine maps this block to a contiguous block of virtual memory in the system address space and returns the virtual address of the base of this block.
 ```
 
 This seems consistent with the method that follows which verifies that the returned value corresponds to a physical address with `MmGetPhysicalAddress`.

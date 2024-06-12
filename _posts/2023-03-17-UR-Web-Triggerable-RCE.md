@@ -3,7 +3,7 @@ title: Unified Remote - Web Triggerable Remote Code Execution
 author: Harkenzo
 subtitle: An Ode To Origin
 date: 2023-03-17 18:00:00 +0100
-categories: [Exploits]
+categories: [Research, Exploits]
 tags: [Web, Browser, CSRF, RCE, CORS]
 cover-img: /assets/img/wtrce.jpg
 ---
