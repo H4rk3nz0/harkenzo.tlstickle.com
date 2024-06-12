@@ -11,7 +11,7 @@ cover-img: /assets/img/keeper-trash.jpg
 # <u>It's Not What You Think - It's Worse</u>
 There are a number of password management solutions available to the public. While some have naturally been deprecated due to security concerns or improvements in cryptographic handling. The noteworthy part is that they usually don't just hand over plain text passwords when asked.
 
-<img src="../assets/img/electron-meh.png">
+![Oops...](../assets/img/electron-meh.png)
 
 With that piece of foreshadowing, the target for today's post is a solution quickly growing in popularity even amongst enterprise users: <b>[Keeper Password Manager](https://www.keepersecurity.com/)</b>
 
@@ -19,21 +19,21 @@ With that piece of foreshadowing, the target for today's post is a solution quic
 
 To begin I start by installing Keeper Password Manager, creating an account, and creating some fake credential entries. By now I of course notice that the Desktop App was effectively Electron, or a Chromium Embedded Framework (`CEF`) application.
 
-<img src="../assets/img/keeper-records.png">
+![Oops...](../assets/img/keeper-records.png)
 
 Now, the lowest hanging fruit thing I can think to attempt. Attach WinDebug to Keeper and use it to search memory for password strings or structures that could map where they are stored. Attempting to search for the credentials in memory very graciously gives them to us in plain text - oh joy.
 
-<img src="../assets/img/password-search-one.png">
+![Oops...](../assets/img/password-search-one.png)
 
 Now I have an idea of how they are being stored in memory though and the JSON layout. This will prove useful in searching for others, so I used the start of the JSON to search for other entries. There were many - with each having two memory locations.
 
-<img src="../assets/img/credential-pairs.png">
+![Oops...](../assets/img/credential-pairs.png)
 
 Now I begin looking for patterns that could help me figure out the mapping or locations these are written to, anything that could act as the equivalent to a V8 string mapping table.
 
 After some searching and comparing a pattern begins to emerge. All the addresses have pointers for them stored at: `0x??fff0020 -> 0x??fff0030`
 
-<img src="../assets/img/the-pattern.png">
+![Oops...](../assets/img/the-pattern.png)
 
 Through further searching I did find that this could vary with the most reliable range being `0x??fff0010 -> 0x??fff1ff0` as the increments of `0x10` each appeared to store a pointer to a different string or value - including the JSON password strings.
 
@@ -45,7 +45,7 @@ Fortunately, Enoch Wang, Samuel Zurowski, and Tyler Thomas published some resear
 
 According, to their work and corresponding Volatility Plugin: V8 operates by crating a MetaMap which stores a pointer reference to itself `+0x1`, this pointer is also present in the Object maps and the pointers for these Object maps are then once again stored in the Object Structures where strings and other data can be found and extracted. 
 
-<img src="../assets/img/metamap-layout.png">
+![Oops...](../assets/img/metamap-layout.png)
 
 So in theory, one could iterate over memory to find a specific byte pattern, always present at `+0x10` bytes after the start of the MetaMap: `ff 03 (40 | 20) 00` - at least according to the volatility plugin and the Juicing V8 research work. Sadly this byte pattern is seemingly unreliable and produces inaccurate results in the case of Keeper but it is something that could be built upon in future.
 
@@ -102,7 +102,7 @@ To begin I started by constructing the necessary CSharp code.
 
 I did spot that <b>Keeper</b> almost always starts the password containing child process with `--renderer-client-id=5`.
 
-<img src="../assets/img/target-pid.png">
+![Oops...](../assets/img/target-pid.png)
 
 This can alter if the target child process crashes and the parent does not terminate, so felt it best to include a check for `7` as well:
 
@@ -160,15 +160,15 @@ We can now make a call to get a handle to the target process with both virtual M
 
 Now finally to incorporate the code to handle extracting the records. Under more surgical conditions we could attempt to precisely determine the length. If we look around near the stored password JSON string we can quickly identify a useful set of bytes. Exactly 8 bytes prior to the password JSON is four bytes that are almost always seemingly `0x00000180 | 384`. 
 
-<img src="../assets/img/get-pass-json-length.png">
+![Oops...](../assets/img/get-pass-json-length.png)
 
 If we however create an entry in Keeper that exceeds this length we see it changes to `0x00000400 | 1024`
 
-<img src="../assets/img/long-entry.png">
+![Oops...](../assets/img/long-entry.png)
 
 If we compare the base address with this length - 0x1 we can see we perfectly match the padding that surrounds the end of the JSON string object which is always padded with 0x20's.
 
-<img src="../assets/img/calculate-length-and-padding.png">
+![Oops...](../assets/img/calculate-length-and-padding.png)
 
 However, as discussed before, surgical precision and the V8 MetaMap structures were not reliable during my analysis. So with this in mind we can simply rely on RegEx to grab the appropriate JSON structure. I would like to apologise in advance for the messiest set of Regular Expressions to grace the internet.
 
@@ -253,8 +253,8 @@ However, there are crucial bits of data missing here. Keeper stores far more of 
 
 Also, while the idea of a master password is great - it is conveniently stored in memory in plain text right next to a recognizable `data_key` identifier for easy retrieval.
 
-<img src="../assets/img/master-pass.png">
-<img src="../assets/img/master-pass-struct.png">
+![Oops...](../assets/img/master-pass.png)
+![Oops...](../assets/img/master-pass-struct.png)
 
 An exception to this is SSO logins which instead appear to store a JSON Web Token, in a separate JSON object. Not that anyone has an interest in that, ***wink wink***. 
 
@@ -297,7 +297,7 @@ So I shall apply checks for the master password too, by looking for the data_key
 
 After debugging and testing my code I have now reached a stable point where it consistently dumps all stored credentials across hosts and installs.
 
-<img src="../assets/img/peeper-final.png">
+![Oops...](../assets/img/peeper-final.png)
 
 From here it is worth asking, what happens when it signs the user out or if a user deletes a record? Well fear not, it does nothing. Unless you are using an enterprise or SSO sign-in, memory clearing will not be configured by default.
 
@@ -305,7 +305,7 @@ So long as the application and its child processes haven't been entirely restart
 
 Well surely the browser extension doesn't suffer from this issue and manages the storage of clear text credentials carefully with clearing of memory and on-demand credential retrieval? No, it really doesn't. The below is a live MSEDGE browser child process memory which has all the credentials stored in plain text.
 
-<img src="../assets/img/msedge-clear.png">
+![Oops...](../assets/img/msedge-clear.png)
 
 For any of those wondering if this is of concern to Keeper please see the attached out-of-scope vulnerability disclosure bullet point.
 

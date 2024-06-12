@@ -15,8 +15,7 @@ In the coming two weeks I would produce six separate scripts all inspired by num
 
 `target = socket(AF_INET, SOCK_DGRAM)`
 
-<img src="../assets/img/Sorry0rphon.gif">
-
+![Oops...](../assets/img/Sorry0rphon.gif)
 
 While many of these scripts were essentially a form of traffic replay by my less than stellar python code, I was excited to see observable results and I did come to find that there were vulnerabilities amidst the python syntax errors.
 
@@ -83,7 +82,7 @@ I noticed a somewhat unusual reference to a method of dragging and dropping a fi
 
 Some form of file upload, excellent! Now to inspect what a typical remote package looks like. Fortunately some example Remotes are supplied for analysis.
 
-<img src="../assets/img/unified-remote-example-package.png">
+![Oops...](../assets/img/unified-remote-example-package.png)
 
 Two files of interest stand out immediately, the XML & the LUA file. Already two potential abuse paths. Either some form of request forgery or file disclosure through XML External Entity or more interestingly abusing the LUA file to achieve potential Code Execution.
 
@@ -91,14 +90,15 @@ First to establish what a test file upload request looks like. Attempting to dra
 
 There were numerous references to `ZIP` file handling and even exception and error handling functions defined for it.
 
-<img src="../assets/img/unified-remote-file-idea.png">
-<img src="../assets/img/indication-of-zip-handling-function.png">
+![Oops...](../assets/img/unified-remote-file-idea.png)
+
+![Oops...](../assets/img/indication-of-zip-handling-function.png)
 
 Testing confirmed that, yes, the server accepted a ZIP file upload for adding a remote package folder. I zipped up one of the examples and made minor edits to values like its name and submitted it via drag and drop.
 
 I was then presented with a very promising set of response headers. Of all the potential response headers to receive I was not expecting a wildcarded `Access-Control-Allow-Origin`.
 
-<img src="../assets/img/unified-remote-control-origin.png">
+![Oops...](../assets/img/unified-remote-control-origin.png)
 
 This effectively meant that so long as I conformed to standard CORS pre-flight content-type options and no specialized headers were required, I could potentially request this through client-side JavaScript from any web origin the user visits.
 
@@ -137,7 +137,7 @@ I continued regardless and produced myself a simple XHR JavaScript containing HT
 
 Upon attempting to open the HTML page the request was made however it returned a ZIP file processing error. So clearly an issue with the encoding and Content-Type. However, in order to satisfy a CORS pre-flight free exploit, I would need to conform to one of the following content-types:  `text/plain`, `application/x-www-form-urlencoded`, and `multipart/form-data`.
 
-<img src="../assets/img/unified-remote-zip-error.png">
+![Oops...](../assets/img/unified-remote-zip-error.png)
 
 This was frankly the hardest part, finding a way to send a full zip binary over a post method that breaks or treat specific characters uniquely to others without the correct encoding applied. Fortunately, an interesting interface presents opportunity, a Blob array buffer. An immutable raw binary data stream that could hopefully preserve the encoding during exploit payload transmission.
 
@@ -177,7 +177,8 @@ Plugging this into the previous exploit payload resulted in the below Proof of C
 
 Finally, I had achieved a potential script to prove for Web Triggerable Remote Code Execution. To prove for it I used a static HTML response Workflow from Pipedream to test and hopefully prove for its exploitability from any internet origin.
 
-<img src="../assets/img/urwtrce-proof.gif">
+
+![Oops...](../assets/img/urwtrce-proof.gif)
 
 A successful day wasted at my keyboard. Thanks for reading, I have attached a link to a full Python script proof of concept I made to automate updating and serving the payload page. The exploit still affects the most current version of Unified Remote too as of writing (3.13).
 
