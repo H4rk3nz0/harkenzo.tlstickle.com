@@ -1,12 +1,12 @@
 ---
 title: AMD pdfwkrnl.sys - Elevation of Privilege
 author: Harkenzo
-description: The first pop
+description: The First Popped Corn
 date: 2024-06-11 18:00:00 +0100
 categories: [Research, Exploits]
 tags: [Kernel, Exploit Development, WinDbg]
 image: 
-    path: /assets/img/so-many-bsods.png
+    path: /assets/img/so-many-bsodss.png
     alt: Oops...
 ---
 
