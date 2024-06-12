@@ -1,11 +1,13 @@
 ---
 title: Keeper Security - Dumping Cleartext Passwords
 author: Harkenzo
-subtitle: Please Do Not The Sue
+description: Please Do Not The Sue
 date: 2023-06-12 18:00:00 +0100
 categories: [Research, Exploits]
 tags: [CredentialDumping, Memory, WinDbg, Browser]
-cover-img: /assets/img/keeper-trash.jpg
+image:
+    path: /assets/img/keeper-trash.jpg
+    alt: Oops...
 ---
 
 # <u>It's Not What You Think - It's Worse</u>

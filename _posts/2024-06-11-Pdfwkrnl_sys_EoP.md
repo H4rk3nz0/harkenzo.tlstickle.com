@@ -1,11 +1,13 @@
 ---
 title: AMD pdfwkrnl.sys - Elevation of Privilege
 author: Harkenzo
-subtitle: The first pop
+description: The first pop
 date: 2024-06-11 18:00:00 +0100
 categories: [Research, Exploits]
 tags: [Kernel, Exploit Development, WinDbg]
-cover-img: /assets/img/so-many-bsods.png
+image: 
+    path: /assets/img/so-many-bsods.png
+    alt: Oops...
 ---
 
 ## <u>Some Background</u>
