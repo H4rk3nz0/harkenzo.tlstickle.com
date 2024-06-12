@@ -207,7 +207,7 @@ So, the grand question: `Where is ntoskrnl's base address?`. Without it, my read
 
 If a process is running under typical circumstances, medium integrity, it can perform an `NtQuerySystemInformation()` call with a `SYSTEM_INFORMATION_CLASS` of `SystemExtendedHandleInformation`/`64` to leak the KTHREAD address which enables other exploit avenues. 
 
-I wanted to get this exploit working from low integrity.
+However, I wanted to get this exploit working from low integrity and as such the above techniques would not work.
 
 <br>
 
