@@ -9,7 +9,7 @@ image:
     path: /assets/img/keeper-trash.jpg
 ---
 
-# <u>It's Not What You Think - It's Worse</u>
+## <u>It's Not What You Think - It's Worse</u>
 There are a number of password management solutions available to the public. While some have naturally been deprecated due to security concerns or improvements in cryptographic handling. The noteworthy part is that they usually don't just hand over plain text passwords when asked.
 
 ![Oops...](../assets/img/electron-meh.png)

@@ -9,7 +9,7 @@ image:
     path: /assets/img/wtrce.jpg
 ---
 
-# <u>Some Background</u>
+## <u>Some Background</u>
 Back in 2021, shortly before completing my OSCP studies, I decided to afford some time to hunting for my first 'CVE'. Whether spurred on by morbid curiosity for the mobile application landscape or simply a desire to play tee-ball with a notoriously poorly regulated ecosystem escapes me - but it certainly yielded some interesting results.
 
 In the coming two weeks I would produce six separate scripts all inspired by numerous 'Mobile -> Desktop' applications. All but one of which served the purpose of remote controlling a server application enabled computer on the same local network. A noteworthy example was a rewrite of a now notorious and numerously forked exploit for [RemoteMouse](https://www.exploit-db.com/exploits/46697) which unnecessarily utilized `UDP` despite `TCP` functioning identically, creating unreliable exploitation.
