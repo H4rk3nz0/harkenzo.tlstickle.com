@@ -650,7 +650,7 @@ Finally, having finished out the last of my `main` method's functionality we can
 Finally, I can get around to using the proof of concept to pop some SYSTEM shells. It looks like it works, though as mentioned - mileage may vary based on version, build, and patching.  
 
 <figure>
-    <img src="../assets/img/17763-system-shell.png"> <img src="../assets/img/19042-system-shell.png">
+    <img src="../assets/img/17763-system-shell.png" alt="Oops..."> <img src="../assets/img/19042-system-shell.png" alt="Oops...">
 </figure>
 
 If you've read this far into my disorganized post, then thank you very much for sticking around through my messy rambles. You can of course find the full exploit code with any revisions here: [CVE-2023-20598](https://github.com/H4rk3nz0/CVE-2023-20598-PDFWKRNL)
