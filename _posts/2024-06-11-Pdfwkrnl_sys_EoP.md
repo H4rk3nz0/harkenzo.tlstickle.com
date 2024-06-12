@@ -1,6 +1,6 @@
 ---
 title: AMD PdFwKrnl.sys - Elevation of Privilege
-author: 1
+author: Harkenzo
 description: The First Popped Corn
 date: 2024-06-11 18:00:00 +0100
 categories: [Research, Exploits]

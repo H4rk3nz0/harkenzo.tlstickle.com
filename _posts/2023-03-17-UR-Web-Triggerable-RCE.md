@@ -1,6 +1,6 @@
 ---
 title: Unified Remote - Web Triggerable Remote Code Execution 
-author: 1
+author: Harkenzo
 description: An Ode To Origin
 date: 2023-03-17 18:00:00 +0100
 categories: [Research, Exploits]
