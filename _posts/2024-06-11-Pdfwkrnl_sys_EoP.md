@@ -6,7 +6,7 @@ date: 2024-06-11 18:00:00 +0100
 categories: [Research, Exploits]
 tags: [Kernel, Exploit Development, WinDbg]
 image: 
-    path: /assets/img/so-many-bsodss.png
+    path: /assets/img/so-many-bsods.png
     alt: Oops...
 ---
 
