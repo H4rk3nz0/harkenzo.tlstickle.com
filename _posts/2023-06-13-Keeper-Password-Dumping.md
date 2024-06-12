@@ -7,7 +7,6 @@ categories: [Research, Exploits]
 tags: [CredentialDumping, Memory, WinDbg, Browser]
 image:
     path: /assets/img/keeper-trash.jpg
-    alt: Oops...
 ---
 
 # <u>It's Not What You Think - It's Worse</u>

@@ -7,7 +7,6 @@ categories: [Research, Exploits]
 tags: [Kernel, Exploit Development, WinDbg]
 image: 
     path: /assets/img/so-many-bsods.png
-    alt: Oops...
 ---
 
 ## <u>Some Background</u>
