@@ -1,5 +1,5 @@
 ---
-title: AMD pdfwkrnl.sys - Elevation of Privilege
+title: AMD PdFwKrnl.sys - Elevation of Privilege
 author: Harkenzo
 description: The First Popped Corn
 date: 2024-06-11 18:00:00 +0100
@@ -311,7 +311,7 @@ Sadly this structure was not exported by ntoskrnl which meant that using it for 
 
 I opened `ntoskrnl` in IDA and began walking down the exported symbols list to look for a usable function with a signature that, most importantly, didn't change across windows versions. After some looking, I found one I was happy with, `HviGetHardwareFeatures`.
 
-Based on some checks across multiple Windows 10 versions an up-to-date Windows 11 version - the export wasn't missing and had a repeatable and predictable signature. On Windows 11 part of it it was shifted up `0x10` bytes which I can easily address with some if statement nonsense.
+Based on some checks across multiple Windows 10 versions and an up-to-date Windows 11 version - the export wasn't missing and had a repeatable and predictable signature. On Windows 11 part of it it was shifted up `0x10` bytes which I can easily address with some if statement nonsense.
 
 ![Oops...](../assets/img/gethwfeature-signature.png)
 
