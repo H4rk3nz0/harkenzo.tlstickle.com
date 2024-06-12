@@ -52,7 +52,7 @@ So in theory, one could iterate over memory to find a specific byte pattern, alw
 
 So, with no 'refined' means of mapping and parsing the target application's memory I turned to the biggest hammer I could find for this metaphorical nail: <b><i>RegEx</i></b>
 
-# <u>Witty Expression Cirqa 1951</u>
+## <u>Witty Expression Cirqa 1951</u>
 
 To begin I started by constructing the necessary CSharp code.
 

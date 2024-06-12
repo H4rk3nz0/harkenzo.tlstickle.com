@@ -42,7 +42,7 @@ CVE-2022-3229 respectively) and the ruby modules were scheduled for main branch 
 
 <br>
 
-# <u>Any Origin's A Goal</u>
+## <u>Any Origin's A Goal</u>
 
 I recently applied some renewed vigor for application testing to re-reviewing the apps I had previously written scripts for. Specifically I went about trying to identify different avenues to achieve remote code execution and so I started from scratch.
 
@@ -112,7 +112,7 @@ io.popen([[calc.exe]])
 
 <br>
 
-# <u>Beware of the Blob</u>
+## <u>Beware of the Blob</u>
 
 There was one obvious hurdle to still overcome, the zip file upload was handled as an `application/octet-stream` content-type and without more permissive CORS headers my exploit attempts may be limited or not work.
 
