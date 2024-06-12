@@ -1,6 +1,6 @@
 ---
 title: Keeper Security - Dumping Cleartext Passwords
-author: Harkenzo
+author: 1
 description: Please Do Not The Sue
 date: 2023-06-12 18:00:00 +0100
 categories: [Research, Exploits]
