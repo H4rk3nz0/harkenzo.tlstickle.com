@@ -452,9 +452,9 @@ ULONGLONG walk_nt(HANDLE device_handle, ULONGLONG psysquota)
 }
 ```
 
-There are of course many limitations and caveats that come with this approach; random version related differences may change the above signatures causing the code to read further back than the `ntoskrnl` base and into uninitialized memory - causing a BSOD. While my testing seemed to indicate a good degree of version independency, your mileage may vary.
+There are of course some limitations and caveats that come with this approach; if any values are incremented or changed at runtime compared signatures would not match. This would cause the code to read further back than the `ntoskrnl` base and into uninitialized memory - causing a BSOD. While my testing seemed to indicate this issue wasn't applicable, your mileage may vary.
 
-Speaking of version independency, may as well commit to the intent. I created the below functions to be run at the start of main method execution to correct for the `EPROCESS` offsets differing between Windows versions.
+Speaking of version independency, may as well commit to the intent. I created the below functions to be run at the start of main method execution to correct for the `EPROCESS` offsets differing between Windows versions. All of the below offsets can be found using the [Vergilius Project](https://www.vergiliusproject.com/kernels/x64/windows-10/1511/_EPROCESS) which was vital in ensuring that the offsets matched the detected host versioning.
 
 ```c++
 DWORD TOKEN_OFFSET;
@@ -625,7 +625,7 @@ ULONGLONG GetCurrentEproc(HANDLE DriverHandle, ULONGLONG sys_eproc) {
 }
 ```
 
-Finally, having finished out the last of my `main` method's functionality we can now actually perform the SYSTEM token theft and elevate our privileges from that of a `low integrity` process. The below code does the typical calculations and invokes the above code to find our current process' `EPROCESS` and swaps the token values, preserving the token's last nibble; the Reference Counter / `RefCnt`.
+Finally, having finished out the last of my `main` method's functionality I can actually perform the SYSTEM token theft and elevate our privileges from that of a `low integrity` process. The below performs the typical calculations and invokes the above code to find our current process' `EPROCESS` by checking the `UniqueProcessId` value. If found it will copy the SYSTEM token value, preserving my token's last nibble; the Reference Counter / `RefCnt`.
 
 ```c++
             ULONGLONG sys_eproc = arbitrary_read(DriverHandle, nt_base + PSISP_offset);
@@ -669,7 +669,7 @@ Finally, having finished out the last of my `main` method's functionality we can
 }
 ```
 
-Finally, I can get around to using the proof of concept to pop some SYSTEM shells. It looks like it works, though as mentioned - mileage may vary based on version, build, and patching.  
+Finally, I can get around to using the proof of concept to pop some SYSTEM shells. It looks like it works, though as mentioned no exploit is perfect so I'll apologize for any BSODs in advance.  
 
 <figure>
     <img src="../assets/img/17763-system-shell.png" alt="Oops..."> <img src="../assets/img/19042-system-shell.png" alt="Oops...">
