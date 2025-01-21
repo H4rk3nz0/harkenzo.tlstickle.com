@@ -214,6 +214,7 @@ exclude:
   - LICENSE
   - "*.config.js"
   - package*.json
+  - assets/404.html
 
 jekyll-archives:
   enabled: [categories, tags]
