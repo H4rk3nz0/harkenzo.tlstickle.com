@@ -183,4 +183,4 @@ Finally, I had achieved a potential script to prove for Web Triggerable Remote C
 
 A successful day wasted at my keyboard. Thanks for reading, I have attached a link to a full Python script proof of concept I made to automate updating and serving the payload page. The exploit still affects the most current version of Unified Remote too as of writing (3.13).
 
-[Unfied Remote - Web Triggerable Remote Code Execution](https://github.com/H4rk3nz0/PenTesting/blob/main/Exploits/unified%20remote/unified-remote-web-triggerable-rce.py)
+[Unfied Remote - Web Triggerable Remote Code Execution](https://github.com/H4rk3nz0/Exploits/blob/main/unified%20remote/unified-remote-web-triggerable-rce.py)
